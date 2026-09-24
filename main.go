@@ -6,6 +6,7 @@ import (
 	"net"
 	"sync"
 	"time"
+	"strconv"
 )
 
 func main() {
@@ -33,6 +34,13 @@ func main() {
 	start := time.Now()
 
 	for _, port := range ports {
+
+		portNum, err := strconv.Atoi(port)
+
+		if err != nil || portNum < 1|| portNum > 65535{
+			fmt.Printf("Invalid port: %s\n",port)
+			continue
+		}
 		wg.Add(1)
 		scanned_ports++
 
