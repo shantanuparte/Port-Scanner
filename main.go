@@ -1,9 +1,9 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"net"
-	"os"
 	"sync"
 	"time"
 )
@@ -12,43 +12,58 @@ func main() {
 
 	var wg sync.WaitGroup
 	scanned_ports := 0
+
 	fmt.Printf("\t---PORT SCANNER---\n\n")
 
-	if (len(os.Args)) < 3 {
-		fmt.Println("Not enough arguments: <host name> <port> <port> ...")
+	timePtr := flag.Int("time", 2, "Custom time defined by the user")
+	flag.Parse()
+
+	args := flag.Args()
+
+	if len(args) < 2 {
+		fmt.Println("Usage: scanner [-time seconds] <host> <port> <port> ...")
+		return
 	}
 
-	
-	args := os.Args[2:]
-	address := os.Args[1]
+	address := args[0]
+	ports := args[1:]
+
+	fmt.Printf("HOST: %v\n\n", address)
 
 	start := time.Now()
-	fmt.Printf("HOST: %v\n\n",address)
-	
-	for _, something := range args{
+
+	for _, port := range ports {
 		wg.Add(1)
 		scanned_ports++
-		go func ()  {
+
+		go func(port string) {
 			defer wg.Done()
-			portScanner(something,address)
-		}()
+			portScanner(port, address, *timePtr)
+		}(port)
 	}
 
 	wg.Wait()
-	timeGone := time.Since(start)
-	fmt.Printf("\n\nScanned: %v ports\n",scanned_ports)
-	fmt.Printf("Total Time: %v\n", timeGone)
 
+	timeGone := time.Since(start)
+
+	fmt.Printf("\n\nScanned: %v ports\n", scanned_ports)
+	fmt.Printf("Total Time: %v\n", timeGone)
 }
 
-func portScanner(port string, address string) {
-	timeout := time.Second * 2
+func portScanner(port string, address string, user_time int) {
+
+	timeout := time.Second * time.Duration(user_time)
+
 	network := fmt.Sprintf("%s:%s", address, port)
+
 	conn, err := net.DialTimeout("tcp", network, timeout)
+
 	if err != nil {
 		fmt.Printf("PORT: %s\tCLOSED\n", port)
 		return
 	}
+
 	fmt.Printf("PORT: %s\tOPEN\n", port)
+
 	conn.Close()
 }
